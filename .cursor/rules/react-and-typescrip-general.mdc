@@ -1,0 +1,18 @@
+---
+description: General rules for React and TypeScript projects, focusing on code clarity and best practices.
+globs: *.tsx,*.ts,*.js,*.jsx
+alwaysApply: false
+---
+
+- You are an expert AI programming assistant that primarily focuses on producing clear, readable React and TypeScript code.
+- This project uses React 19 with React Compiler and TanStack Start as the foundational framework.
+- For routing, use TanStack Router patterns for both client and server-side routing.
+- For data fetching, prefer TanStack Query hooks with proper caching and error handling.
+- For client-side global state management, use Zustand stores structured with proper actions and selectors.
+- Follow a component-driven development approach with reusable UI components.
+- Leverage React's latest patterns and features, including hooks, context, and suspense.
+- Write functions as server functions (using TanStack Start) when they need to interact with databases or external APIs.
+- Make appropriate distinctions between components that should render on the client vs. the server.
+- Apply React best practices like proper key usage in lists, avoiding unnecessary rerenders, and composing components effectively.
+- Structure files consistently, with one main component per file, organized by feature or purpose.
+- Use ESLint and Prettier for consistent code style as configured in the project.

@@ -1,0 +1,263 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# Better-Auth Cursor Rule
+
+This rule provides guidelines for using Better-Auth in TanStack Start applications, covering authentication patterns, session management, and security best practices.
+
+## Core Principles
+
+- Use Better-Auth as the primary authentication solution for the application
+- Implement consistent authentication patterns across all API routes and pages
+- Follow security best practices for session management and user data protection
+- Leverage TypeScript for type-safe authentication flows
+
+## Authentication Setup
+
+### Configuration
+
+- Better-Auth configuration should be centralized in `src/lib/server/auth.ts`
+- Use environment variables for sensitive configuration like secrets and database URLs
+- Configure appropriate session expiration and refresh token settings
+- Set up proper CORS and security headers
+
+### Database Integration
+
+- Use Drizzle ORM for auth-related database operations
+- Define user and session schemas in the appropriate schema files
+- Implement proper foreign key relationships for user-related data
+
+## API Route Authentication
+
+### Session Validation Pattern
+
+Use this consistent pattern for authenticating API routes:
+
+```typescript
+import { auth } from "@/lib/server/auth";
+
+export const APIRoute = createAPIFileRoute("/api/protected-route")({
+  GET: async ({ request }) => {
+    try {
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (!session?.user?.id) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      // Your protected logic here
+      const userId = session.user.id;
+    } catch (error) {
+      console.error("[GET /api/protected-route] Error:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  },
+});
+```
+
+### Error Handling
+
+- Always return proper HTTP status codes (401 for unauthorized, 403 for forbidden)
+- Log authentication errors appropriately without exposing sensitive information
+- Handle session expiration gracefully
+- Provide clear error messages for debugging in development
+
+### Resource Authorization
+
+- Always verify that users can only access their own resources
+- Use database queries with user ID filtering for data access
+- Implement proper ownership checks before any CRUD operations
+
+```typescript
+// Verify ownership before operations
+const resource = await db.query.someTable.findFirst({
+  where: and(eq(someTable.id, params.id), eq(someTable.userId, session.user.id)),
+});
+
+if (!resource) {
+  return new Response("Not Found", { status: 404 });
+}
+```
+
+## Client-Side Authentication
+
+### Route Protection
+
+Use loaders for route-level authentication:
+
+```typescript
+export const Route = createFileRoute("/protected")({
+  loader: async () => {
+    const session = await auth.api.getSession({ headers: getHeaders() });
+    if (!session?.user) {
+      throw redirect({ to: "/login" });
+    }
+    return { user: session.user };
+  },
+  component: ProtectedComponent,
+});
+```
+
+### Authentication State Management
+
+- Use TanStack Query for managing authentication state
+- Implement proper cache invalidation on login/logout
+- Store minimal user data in client state (no sensitive information)
+
+### Form Handling
+
+- Use Better-Auth's built-in form handlers for login/register
+- Implement proper validation on both client and server sides
+- Handle form errors gracefully with user-friendly messages
+
+## Security Best Practices
+
+### Session Management
+
+- Use secure session cookies with appropriate flags (httpOnly, secure, sameSite)
+- Implement proper session expiration and refresh mechanisms
+- Clear sessions on logout and account deletion
+
+### Data Protection
+
+- Never expose sensitive user data in API responses
+- Hash and salt passwords properly (Better-Auth handles this)
+- Implement rate limiting for authentication endpoints
+- Use HTTPS in production environments
+
+### Input Validation
+
+- Validate all user inputs using Zod schemas
+- Sanitize user data before database operations
+- Implement proper CSRF protection
+
+## Database Schema Patterns
+
+### User Relationships
+
+- Link user-owned resources with proper foreign key constraints
+- Use cascade deletion where appropriate
+- Index frequently queried user-related columns
+
+```typescript
+export const userResource = pgTable("user_resource", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => ulid()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // other fields...
+});
+```
+
+### Audit Fields
+
+- Include created_at, updated_at fields for tracking
+- Store user ID for audit trails where necessary
+- Consider soft deletion for sensitive data
+
+## Error Handling Patterns
+
+### Authentication Errors
+
+```typescript
+// Consistent error handling
+try {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user?.id) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+} catch (error) {
+  console.error("[Route] Auth error:", error);
+  return new Response("Authentication failed", { status: 401 });
+}
+```
+
+### Authorization Errors
+
+```typescript
+// Resource not found vs unauthorized
+const resource = await db.query.resource.findFirst({
+  where: and(eq(resource.id, params.id), eq(resource.userId, session.user.id)),
+});
+
+if (!resource) {
+  // Return 404 instead of 403 to avoid information leakage
+  return new Response("Not Found", { status: 404 });
+}
+```
+
+## Testing Considerations
+
+### Mock Authentication
+
+- Create helper functions for mocking authenticated users in tests
+- Test both authenticated and unauthenticated scenarios
+- Verify proper authorization checks
+
+### Integration Testing
+
+- Test complete authentication flows
+- Verify session persistence and expiration
+- Test cross-request authentication state
+
+## Performance Considerations
+
+### Session Caching
+
+- Implement appropriate session caching strategies
+- Consider using Redis for session storage in production
+- Optimize database queries for user lookups
+
+### Database Optimization
+
+- Index user ID columns for fast lookups
+- Use connection pooling for auth-related queries
+- Consider read replicas for user data queries
+
+## Monitoring and Logging
+
+### Authentication Events
+
+- Log successful and failed authentication attempts
+- Monitor session creation and expiration
+- Track user activity for security analysis
+
+### Security Monitoring
+
+- Implement alerts for unusual authentication patterns
+- Monitor for brute force attacks
+- Track API usage patterns per user
+
+## Common Patterns and Anti-Patterns
+
+### ✅ Good Practices
+
+- Always validate sessions in API routes
+- Use consistent error responses
+- Implement proper resource ownership checks
+- Clear sensitive data from memory after use
+
+### ❌ Anti-Patterns
+
+- Don't store passwords in plain text (Better-Auth prevents this)
+- Don't expose user IDs in URLs unless necessary
+- Don't trust client-side authentication state alone
+- Don't ignore session expiration handling
+
+## Migration and Deployment
+
+### Environment Configuration
+
+- Use different auth configurations for development/production
+- Implement proper secret rotation strategies
+- Test authentication flows in staging environments
+
+### Database Migrations
+
+- Handle auth schema changes carefully
+- Preserve existing user sessions during updates
+- Implement proper rollback strategies

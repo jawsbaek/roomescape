@@ -1,0 +1,305 @@
+---
+description: General rules for tanstack start, focusing on code clarity and best practices.
+globs: 
+alwaysApply: true
+---
+# TanStack Start and TanStack Router Cursor Rules
+
+This document provides comprehensive cursor rules for TanStack Start and TanStack Router projects to ensure consistent development patterns and best practices.
+
+## Project Structure Rules
+
+The TanStack Start project should follow this essential file structure:
+
+```
+├── src/
+│   ├── routes/
+│   │   └── __root.tsx
+│   ├── client.tsx
+│   ├── router.tsx
+│   ├── routeTree.gen.ts
+│   └── ssr.tsx
+├── .gitignore
+├── app.config.ts
+├── package.json
+└── tsconfig.json
+```
+
+The `routeTree.gen.ts` file will be automatically generated when running TanStack Start for the first time[1][7].
+
+## Router Configuration
+
+### Basic Router Setup
+
+The router configuration should be defined in `app/router.tsx` following this pattern:
+
+```typescript
+// app/router.tsx
+import { createRouter as createTanStackRouter } from '@tanstack/react-router'
+import { routeTree } from './routeTree.gen'
+
+export function createRouter() {
+  const router = createTanStackRouter({
+    routeTree,
+    scrollRestoration: true,
+    // Additional configuration options can be added here
+  })
+  return router
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType
+  }
+}
+```
+
+This configuration enables type-safe routing throughout the application and provides scroll restoration functionality[1][7].
+
+### Client Entry Point
+
+The client entry point should be defined in `app/client.tsx`:
+
+```typescript
+// app/client.tsx
+/// 
+import { hydrateRoot } from 'react-dom/client'
+import { StartClient } from '@tanstack/react-start'
+import { createRouter } from './router'
+
+const router = createRouter()
+hydrateRoot(document, )
+```
+
+This code hydrates the client-side application after the initial server request has been fulfilled[1][7].
+
+## Route Definition Rules
+
+### Root Route
+
+The root route should be defined in `app/routes/__root.tsx`:
+
+```typescript
+// app/routes/__root.tsx
+import type { ReactNode } from 'react'
+import {
+  Outlet,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+} from '@tanstack/react-router'
+
+export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      {
+        charSet: 'utf-8',
+      },
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1',
+      },
+      {
+        title: 'TanStack Start Starter',
+      },
+    ],
+  }),
+  component: RootComponent,
+})
+
+function RootComponent() {
+  return (
+    
+      
+    
+  )
+}
+
+function RootDocument({ children }: Readonly) {
+  return (
+    
+      
+        
+      
+      
+        {children}
+        
+      
+    
+  )
+}
+```
+
+This root component wraps all other routes and provides the basic HTML structure for the application[1][7].
+
+### File-Based Routing
+
+TanStack Router supports file-based routing where the file structure closely follows the URL structure:
+
+1. Create route files in the `app/routes` directory
+2. File names determine the URL paths:
+   - `index.tsx` → `/`
+   - `about.tsx` → `/about`
+   - `users/$userId.tsx` → `/users/:userId`
+3. Use `.lazy.tsx` extension for routes that should be lazy-loaded[5][6]
+
+### Route Component Pattern
+
+Each route file should follow this pattern:
+
+```typescript
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/path')({
+  component: RouteComponent,
+  // Optional loader, action, etc.
+})
+
+function RouteComponent() {
+  // Component implementation
+  return Route Content
+}
+```
+
+## Data Fetching Rules
+
+### Route Loaders
+
+Use route loaders for data required by the entire page:
+
+```typescript
+export const Route = createFileRoute('/users/$userId')({
+  component: UserDetails,
+  loader: async ({ params }) => {
+    const user = await fetchUser(params.userId)
+    return { user }
+  }
+})
+
+function UserDetails() {
+  const { user } = Route.useLoaderData()
+  return {user.name}
+}
+```
+
+### Data Patterns
+
+Follow these data fetching patterns for optimal performance[6]:
+
+1. **Route Loaders**: Use for data required by the entire page
+2. **Suspense Queries**: Use for component-specific data that should block rendering
+3. **Regular Queries**: Use for data that depends on user interaction or can be deferred
+4. **Shared Code**: Create utility functions that can be used by both loaders and queries
+
+## Code Organization Rules
+
+### Vertical Modules
+
+Organize code into vertical modules where each page folder contains everything it needs to function properly[6]:
+
+```
+src/
+├── routes/
+│   ├── users/
+│   │   ├── index.tsx
+│   │   ├── $userId.tsx
+│   │   └── components/
+│   │       └── UserCard.tsx
+│   └── __root.tsx
+```
+
+### Horizontal Concerns
+
+For shared functionality across multiple routes:
+
+1. Create a shared `/data/` directory for data fetching utilities
+2. Create a shared `/components/` directory for reusable UI components
+3. Use path aliases for easier imports
+4. Avoid leaking page-specific concerns into shared code[6]
+
+## Nested Routing Rules
+
+### Layout Routes
+
+Create layout routes to share UI elements across multiple child routes:
+
+```typescript
+// app/routes/dashboard/__layout.tsx
+import { Outlet, createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/dashboard/__layout')({
+  component: DashboardLayout,
+})
+
+function DashboardLayout() {
+  return (
+    
+      
+      
+        
+      
+    
+  )
+}
+```
+
+### Custom Layouts for Specific Routes
+
+For routes requiring custom layouts:
+
+1. Create a layout route file (e.g., `__layout.tsx`)
+2. Place child routes within the same directory
+3. Use the `Outlet` component to render child routes[8]
+
+## Performance Optimization Rules
+
+### Lazy Loading
+
+Use lazy loading for routes that aren't immediately needed:
+
+```typescript
+// Using the .lazy.tsx extension
+// app/routes/settings.lazy.tsx
+
+// Or using lazy route components
+import { lazyRouteComponent } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/settings')({
+  component: lazyRouteComponent(() => import('./SettingsPage')),
+})
+```
+
+### Prefetching
+
+Implement prefetching for anticipated user navigation:
+
+```typescript
+function NavLink({ to, children }) {
+  const router = useRouter()
+  
+  return (
+     router.preloadRoute({ to })}
+      children={children}
+    />
+  )
+}
+```
+
+## Authentication Rules
+
+Implement authentication checks in route loaders:
+
+```typescript
+export const Route = createFileRoute('/dashboard')({
+  component: Dashboard,
+  loader: async ({ context }) => {
+    const { auth } = context
+    
+    if (!auth.isAuthenticated) {
+      throw redirect('/login')
+    }
+    
+    return { userData: await fetchUserData() }
+  }
+})
+```

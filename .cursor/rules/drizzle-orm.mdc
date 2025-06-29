@@ -1,0 +1,28 @@
+---
+description: This rule outlines best practices for using Drizzle ORM in TypeScript and JavaScript projects. It covers code organization, performance, security, testing, and common pitfalls.
+globs: src/lib/server/*,src/lib/middleware/*
+alwaysApply: false
+---
+
+- All database interactions must use Drizzle ORM. Direct SQL queries should be avoided unless absolutely necessary.
+- Schema definitions should be placed in `src/lib/server/schema/` directory.
+- Follow the entity-relationship model appropriate for cloud resources management:
+  - Define separate schemas for different cloud providers (AWS, Azure, GCP).
+  - Create proper relationships between accounts, resources, and credentials.
+  - Use appropriate column types based on the data being stored.
+- Use Drizzle's query builder with proper type safety:
+  - Leverage `select`, `insert`, `update`, and `delete` operations with appropriate filtering.
+  - For complex queries, use the relational queries with `innerJoin` or similar methods.
+  - Always handle potential query errors appropriately.
+- For repeated query patterns, create utility functions to avoid code duplication.
+- Include proper data validation before inserting or updating records.
+- Consider performance implications for larger datasets:
+  - Use pagination when fetching large result sets.
+  - Apply appropriate indexes to columns frequently used in WHERE clauses.
+  - Be mindful of N+1 query problems and use appropriate join strategies.
+- For database migrations:
+  - Use Drizzle Kit for generating migrations.
+  - Follow a consistent naming pattern for migration files.
+  - Test migrations thoroughly before applying to production.
+- Implement proper transaction handling for operations that require atomicity.
+- When working with TanStack Query, create custom hooks that encapsulate Drizzle queries and provide proper client-side caching.
