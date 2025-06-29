@@ -17,69 +17,35 @@ export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
-const rooms = [
-  {
-    id: "1",
-    title: "잠실의 별 삼성 SDS",
-    description: "삼성 SDS 타워에서 벌어진 미스터리를 해결하라",
-    difficulty: "초급",
-    duration: "30분",
-    rating: 4.5,
-    image: "/placeholder.svg?height=200&width=300",
-    icon: <Eye className="h-5 w-5" />,
-    color: "from-blue-500 to-cyan-500",
-    mazePattern: "M2,2 L14,2 L14,6 L6,6 L6,10 L14,10 L14,14 L2,14 Z",
-  },
-  {
-    id: "2",
-    title: "사이버 랩",
-    description: "해킹된 연구소에서 탈출하라",
-    difficulty: "중급",
-    duration: "45분",
-    rating: 4.8,
-    image: "/placeholder.svg?height=200&width=300",
-    icon: <Zap className="h-5 w-5" />,
-    color: "from-cyan-500 to-blue-500",
-    mazePattern: "M1,1 L15,1 L15,5 L9,5 L9,9 L15,9 L15,15 L1,15 L1,11 L7,11 L7,7 L1,7 Z",
-  },
-  {
-    id: "3",
-    title: "고대 신전",
-    description: "잃어버린 보물을 찾아 신전을 탈출하라",
-    difficulty: "중급",
-    duration: "50분",
-    rating: 4.3,
-    image: "/placeholder.svg?height=200&width=300",
-    icon: <Brain className="h-5 w-5" />,
-    color: "from-amber-500 to-orange-500",
-    mazePattern: "M3,3 L13,3 L13,7 L7,7 L7,11 L13,11 L13,13 L3,13 L3,9 L9,9 L9,5 L3,5 Z",
-  },
-  {
-    id: "4",
-    title: "좀비 아포칼립스",
-    description: "좀비들로부터 살아남아 안전지대로 탈출하라",
-    difficulty: "고급",
-    duration: "60분",
-    rating: 4.9,
-    image: "/placeholder.svg?height=200&width=300",
-    icon: <Skull className="h-5 w-5" />,
-    color: "from-red-500 to-rose-500",
-    mazePattern:
-      "M1,3 L5,3 L5,1 L11,1 L11,5 L15,5 L15,9 L11,9 L11,13 L5,13 L5,15 L1,15 L1,11 L3,11 L3,7 L1,7 Z",
-    locked: true,
-  },
-];
+// 기존 rooms 배열은 이제 gameStore의 availableRooms를 사용합니다
 
-const getDifficultyColor = (difficulty: string) => {
+const getDifficultyColor = (difficulty: number) => {
   switch (difficulty) {
-    case "초급":
+    case 1:
       return "bg-green-500";
-    case "중급":
+    case 2:
+    case 3:
       return "bg-yellow-500";
-    case "고급":
+    case 4:
+    case 5:
       return "bg-red-500";
     default:
       return "bg-gray-500";
+  }
+};
+
+const getThemeIcon = (theme: string) => {
+  switch (theme) {
+    case "sci-fi":
+      return <Eye className="h-5 w-5" />;
+    case "mystery":
+      return <Zap className="h-5 w-5" />;
+    case "horror":
+      return <Brain className="h-5 w-5" />;
+    case "adventure":
+      return <Skull className="h-5 w-5" />;
+    default:
+      return <Eye className="h-5 w-5" />;
   }
 };
 
@@ -120,7 +86,11 @@ function RouteComponent() {
     const room = availableRooms.find((r) => r.id === roomId);
     if (room) {
       startGame(room.id);
-      navigate({ to: `/game/${room.id}` });
+      if (roomId === "samsung-sds") {
+        navigate({ to: "/game/samsung-sds" });
+      } else {
+        navigate({ to: `/game/${room.id}` });
+      }
     }
   };
 
@@ -248,9 +218,10 @@ function RouteComponent() {
                   onClick={() => {
                     playClickSound();
                     playBackgroundMusic();
+                    navigate({ to: "/game/samsung-sds" });
                   }}
                 >
-                  게임 시작하기
+                  삼성 SDS 방탈출 시작
                 </Button>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -295,7 +266,7 @@ function RouteComponent() {
           </motion.div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {rooms.map((room, index) => (
+            {availableRooms.map((room, index) => (
               <motion.div
                 key={room.id}
                 initial={{ y: 100, opacity: 0 }}
@@ -308,13 +279,16 @@ function RouteComponent() {
                 <Card className="group relative overflow-hidden border-white/10 bg-black/40 transition-all duration-300 hover:border-white/20">
                   {/* 미로 패턴 배경 */}
                   <div className="absolute inset-0 opacity-5">
-                    <MazePattern pattern={room.mazePattern} className="text-white" />
+                    <MazePattern
+                      pattern={room.mazePattern || ""}
+                      className="text-white"
+                    />
                   </div>
 
                   <div className="relative">
                     <motion.img
                       src={room.image || "/placeholder.svg"}
-                      alt={room.title}
+                      alt={room.title || room.name}
                       className="h-48 w-full object-cover"
                       whileHover={{ scale: 1.1 }}
                       transition={{ duration: 0.3 }}
@@ -358,9 +332,9 @@ function RouteComponent() {
                             ease: "linear",
                           }}
                         >
-                          {room.icon}
+                          {getThemeIcon(room.theme)}
                         </motion.div>
-                        {room.title}
+                        {room.title || room.name}
                       </CardTitle>
                       <div className="flex items-center gap-1">
                         <motion.div
@@ -381,7 +355,7 @@ function RouteComponent() {
                     <div className="mb-4 flex items-center justify-between text-sm text-gray-400">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        {room.duration}
+                        {room.duration || `${room.estimatedTime}분`}
                       </div>
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />

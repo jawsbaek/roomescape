@@ -100,13 +100,20 @@ export function useGameSound() {
     // 기본 사운드들 미리 로드
     const loadSound = (key: string, config: SoundConfig) => {
       if (!soundsRef.current[key]) {
-        soundsRef.current[key] = new Howl({
-          src: [config.src],
-          volume: config.volume || 1,
-          loop: config.loop || false,
-          sprite: config.sprite,
-          preload: true,
-        });
+        try {
+          soundsRef.current[key] = new Howl({
+            src: [config.src],
+            volume: config.volume || 1,
+            loop: config.loop || false,
+            sprite: config.sprite,
+            preload: true,
+            onloaderror: (id, error) => {
+              console.warn(`Failed to load sound: ${key}`, error);
+            },
+          });
+        } catch (error) {
+          console.warn(`Failed to create sound: ${key}`, error);
+        }
       }
     };
 
@@ -120,12 +127,19 @@ export function useGameSound() {
 
     // 배경음악 로드
     if (!currentMusicRef.current) {
-      currentMusicRef.current = new Howl({
-        src: [GAME_SOUNDS.backgroundMusic.src],
-        volume: (GAME_SOUNDS.backgroundMusic.volume || 1) * musicVolume,
-        loop: true,
-        preload: true,
-      });
+      try {
+        currentMusicRef.current = new Howl({
+          src: [GAME_SOUNDS.backgroundMusic.src],
+          volume: (GAME_SOUNDS.backgroundMusic.volume || 1) * musicVolume,
+          loop: true,
+          preload: true,
+          onloaderror: (id, error) => {
+            console.warn("Failed to load background music", error);
+          },
+        });
+      } catch (error) {
+        console.warn("Failed to create background music", error);
+      }
     }
 
     return () => {
@@ -211,13 +225,17 @@ export function useGameSound() {
 
       const sound = soundsRef.current[soundKey];
       if (sound) {
-        if (options?.volume !== undefined) {
-          sound.volume(options.volume * sfxVolume);
+        try {
+          if (options?.volume !== undefined) {
+            sound.volume(options.volume * sfxVolume);
+          }
+          if (options?.rate !== undefined) {
+            sound.rate(options.rate);
+          }
+          sound.play();
+        } catch (error) {
+          console.warn(`Failed to play sound: ${soundKey}`, error);
         }
-        if (options?.rate !== undefined) {
-          sound.rate(options.rate);
-        }
-        sound.play();
       }
     },
     [soundEnabled, sfxVolume],

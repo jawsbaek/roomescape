@@ -20,6 +20,15 @@ export interface Room {
   isUnlocked: boolean;
   bestTime?: number;
   completedAt?: Date;
+  // 추가 UI 속성들
+  title?: string;
+  image?: string;
+  rating?: number;
+  color?: string;
+  mazePattern?: string;
+  icon?: React.ReactNode;
+  locked?: boolean;
+  duration?: string;
 }
 
 export interface GameProgress {
@@ -92,44 +101,73 @@ interface GameState {
 
 const initialRooms: Room[] = [
   {
+    id: "samsung-sds",
+    name: "잠실의 별 삼성 SDS",
+    title: "잠실의 별 삼성 SDS",
+    description: "삼성 SDS 타워에서 벌어진 미스터리를 해결하라",
+    theme: "sci-fi",
+    difficulty: 1,
+    estimatedTime: 30,
+    thumbnail: "/images/samsung-sds/1.png",
+    image: "/images/samsung-sds/1.png",
+    isUnlocked: true,
+    rating: 4.5,
+    color: "from-blue-500 to-cyan-500",
+    mazePattern: "M2,2 L14,2 L14,6 L6,6 L6,10 L14,10 L14,14 L2,14 Z",
+    locked: false,
+    duration: "30분",
+  },
+  {
     id: "mystery-library",
     name: "미스터리 도서관",
-    description: "오래된 도서관에 숨겨진 비밀을 찾아보세요.",
+    title: "사이버 랩",
+    description: "해킹된 연구소에서 탈출하라",
     theme: "mystery",
     difficulty: 2,
-    estimatedTime: 15,
-    thumbnail: "/images/rooms/library.jpg",
-    isUnlocked: true,
+    estimatedTime: 45,
+    thumbnail: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
+    isUnlocked: false,
+    rating: 4.8,
+    color: "from-cyan-500 to-blue-500",
+    mazePattern: "M1,1 L15,1 L15,5 L9,5 L9,9 L15,9 L15,15 L1,15 L1,11 L7,11 L7,7 L1,7 Z",
+    locked: true,
+    duration: "45분",
   },
   {
     id: "haunted-mansion",
     name: "유령의 저택",
-    description: "으스스한 저택에서 탈출하세요.",
+    title: "고대 신전",
+    description: "잃어버린 보물을 찾아 신전을 탈출하라",
     theme: "horror",
-    difficulty: 4,
-    estimatedTime: 25,
-    thumbnail: "/images/rooms/mansion.jpg",
+    difficulty: 3,
+    estimatedTime: 50,
+    thumbnail: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
     isUnlocked: false,
+    rating: 4.3,
+    color: "from-amber-500 to-orange-500",
+    mazePattern: "M3,3 L13,3 L13,7 L7,7 L7,11 L13,11 L13,13 L3,13 L3,9 L9,9 L9,5 L3,5 Z",
+    locked: true,
+    duration: "50분",
   },
   {
     id: "pirate-ship",
     name: "해적선",
-    description: "보물을 찾고 해적선에서 탈출하세요.",
+    title: "좀비 아포칼립스",
+    description: "좀비들로부터 살아남아 안전지대로 탈출하라",
     theme: "adventure",
-    difficulty: 3,
-    estimatedTime: 20,
-    thumbnail: "/images/rooms/pirate-ship.jpg",
+    difficulty: 4,
+    estimatedTime: 60,
+    thumbnail: "/placeholder.svg?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
     isUnlocked: false,
-  },
-  {
-    id: "space-station",
-    name: "우주 정거장",
-    description: "고장난 우주 정거장에서 지구로 돌아가세요.",
-    theme: "sci-fi",
-    difficulty: 5,
-    estimatedTime: 30,
-    thumbnail: "/images/rooms/space-station.jpg",
-    isUnlocked: false,
+    rating: 4.9,
+    color: "from-red-500 to-rose-500",
+    mazePattern:
+      "M1,3 L5,3 L5,1 L11,1 L11,5 L15,5 L15,9 L11,9 L11,13 L5,13 L5,15 L1,15 L1,11 L3,11 L3,7 L1,7 Z",
+    locked: true,
+    duration: "60분",
   },
 ];
 
