@@ -1,5 +1,5 @@
+import { Button } from "@/components/ui/button";
 import { MoonIcon, SunIcon } from "lucide-react";
-import { Button } from "~/components/ui/button";
 
 export default function ThemeToggle() {
   function toggleTheme() {

@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { reactStartCookies } from "better-auth/react-start";
 
-import { db } from "~/lib/db";
+import { db } from "@/lib/db";
 
 const getAuthConfig = serverOnly(() =>
   betterAuth({
