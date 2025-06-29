@@ -68,12 +68,12 @@ interface GameState {
   // 인벤토리 관리
   addToInventory: (item: GameItem) => void;
   removeFromInventory: (itemId: string) => void;
-  useItem: (itemId: string) => void;
+  consumeItem: (itemId: string) => void;
 
   // 진행 상황 관리
   updateProgress: (step: number) => void;
   addSolvedPuzzle: (puzzleId: string) => void;
-  useHint: () => void;
+  consumeHint: () => void;
   updateScore: (points: number) => void;
 
   // 방 관리
@@ -231,7 +231,7 @@ export const useGameStore = create<GameState>()(
           });
         },
 
-        useItem: (itemId) => {
+        consumeItem: (itemId: string) => {
           // 아이템 사용 로직은 게임별로 구현
           console.log(`Item ${itemId} used`);
         },
@@ -262,7 +262,7 @@ export const useGameStore = create<GameState>()(
           }
         },
 
-        useHint: () => {
+        consumeHint: () => {
           const state = get();
           const progress = state.gameProgress;
           if (progress) {

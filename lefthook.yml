@@ -1,42 +1,55 @@
-# EXAMPLE USAGE:
-#
-#   Refer for explanation to following link:
-#   https://lefthook.dev/configuration/
-#
-# pre-push:
-#   jobs:
-#     - name: packages audit
-#       tags:
-#         - frontend
-#         - security
-#       run: yarn audit
-#
-#     - name: gems audit
-#       tags:
-#         - backend
-#         - security
-#       run: bundle audit
-#
-# pre-commit:
-#   parallel: true
-#   jobs:
-#     - run: yarn eslint {staged_files}
-#       glob: "*.{js,ts,jsx,tsx}"
-#
-#     - name: rubocop
-#       glob: "*.rb"
-#       exclude:
-#         - config/application.rb
-#         - config/routes.rb
-#       run: bundle exec rubocop --force-exclusion {all_files}
-#
-#     - name: govet
-#       files: git ls-files -m
-#       glob: "*.go"
-#       run: go vet {files}
-#
-#     - script: "hello.js"
-#       runner: node
-#
-#     - script: "hello.go"
-#       runner: go run
+# Lefthook 설정 - TanStack Start 프로젝트용
+# https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  jobs:
+    # TypeScript 타입 체크
+    - name: typescript-check
+      run: bun run tsc --noEmit
+      files: git diff --name-only --cached
+      glob: "*.{ts,tsx}"
+
+    # ESLint 실행 (스테이징된 파일만)
+    - name: eslint
+      run: bun run eslint {staged_files} --fix
+      files: git diff --name-only --cached
+      glob: "*.{js,ts,jsx,tsx}"
+      stage_fixed: true
+
+    # Prettier 포맷팅 (스테이징된 파일만)
+    - name: prettier
+      run: bun run prettier --write {staged_files}
+      files: git diff --name-only --cached
+      glob: "*.{js,ts,jsx,tsx,json,css,md}"
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    # 전체 타입 체크
+    - name: typescript-build-check
+      run: bun run tsc --noEmit
+
+    # 전체 ESLint 체크
+    - name: eslint-all
+      run: bun run eslint src/ --max-warnings 0
+
+    # 테스트 실행 (테스트가 있는 경우)
+    # - name: tests
+    #   run: bun test
+
+    # 빌드 테스트
+    - name: build-check
+      run: bun run build
+
+# 커밋 메시지 규칙 (선택사항)
+commit-msg:
+  jobs:
+    - name: conventional-commits
+      run: |
+        if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}" "$1"; then
+          echo "커밋 메시지가 Conventional Commits 형식을 따르지 않습니다."
+          echo "형식: type(scope): description"
+          echo "예시: feat(auth): add login functionality"
+          exit 1
+        fi

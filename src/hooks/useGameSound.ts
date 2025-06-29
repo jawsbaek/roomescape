@@ -84,6 +84,13 @@ export function useGameSound() {
   const soundsRef = useRef<{ [key: string]: Howl }>({});
   const currentMusicRef = useRef<Howl | null>(null);
   const currentAmbientRef = useRef<Howl | null>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  // 타임아웃 정리 함수
+  const clearAllTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+    timeoutsRef.current = [];
+  }, []);
 
   // 사운드 초기화
   useEffect(() => {
@@ -115,7 +122,7 @@ export function useGameSound() {
     if (!currentMusicRef.current) {
       currentMusicRef.current = new Howl({
         src: [GAME_SOUNDS.backgroundMusic.src],
-        volume: GAME_SOUNDS.backgroundMusic.volume! * musicVolume,
+        volume: (GAME_SOUNDS.backgroundMusic.volume || 1) * musicVolume,
         loop: true,
         preload: true,
       });
@@ -123,6 +130,7 @@ export function useGameSound() {
 
     return () => {
       // 컴포넌트 언마운트 시 모든 사운드 정지
+      clearAllTimeouts();
       const sounds = soundsRef.current;
       Object.values(sounds).forEach((sound) => {
         sound.stop();
@@ -133,7 +141,7 @@ export function useGameSound() {
       currentAmbientRef.current?.stop();
       currentAmbientRef.current?.unload();
     };
-  }, [musicVolume, soundEnabled]);
+  }, [musicVolume, soundEnabled, clearAllTimeouts]);
 
   // 볼륨 설정 업데이트
   useEffect(() => {
@@ -145,7 +153,9 @@ export function useGameSound() {
 
     Object.entries(soundsRef.current).forEach(([key, sound]) => {
       if (key !== "backgroundMusic") {
-        const originalVolume = GAME_SOUNDS[key as keyof typeof GAME_SOUNDS]?.volume || 1;
+        const soundKey = key as keyof typeof GAME_SOUNDS;
+        const originalConfig = GAME_SOUNDS[soundKey] as SoundConfig;
+        const originalVolume = originalConfig?.volume || 1;
         sound.volume(originalVolume * sfxVolume);
       }
     });
@@ -153,16 +163,19 @@ export function useGameSound() {
 
   // 현재 방에 따른 앰비언트 사운드 변경
   useEffect(() => {
+    clearAllTimeouts();
+
     if (currentRoom?.theme) {
       const ambientConfig = GAME_SOUNDS.ambientSounds[currentRoom.theme];
       if (ambientConfig) {
-        // 이전 앰비언트 사운드 정지
-        currentAmbientRef.current?.fade(currentAmbientRef.current.volume(), 0, 1000);
-        setTimeout(() => {
-          currentAmbientRef.current?.stop();
-        }, 1000);
+        if (currentAmbientRef.current) {
+          currentAmbientRef.current.fade(currentAmbientRef.current.volume(), 0, 1000);
+          const stopTimeout = setTimeout(() => {
+            currentAmbientRef.current?.stop();
+          }, 1000);
+          timeoutsRef.current.push(stopTimeout);
+        }
 
-        // 새 앰비언트 사운드 시작
         currentAmbientRef.current = new Howl({
           src: [ambientConfig.src],
           volume: 0,
@@ -171,16 +184,25 @@ export function useGameSound() {
         });
 
         currentAmbientRef.current.play();
-        currentAmbientRef.current.fade(0, ambientConfig.volume! * musicVolume, 2000);
+        currentAmbientRef.current.fade(
+          0,
+          (ambientConfig.volume || 1) * musicVolume,
+          2000,
+        );
       }
-    } else {
-      // 방을 나갈 때 앰비언트 사운드 정지
-      currentAmbientRef.current?.fade(currentAmbientRef.current.volume(), 0, 1000);
-      setTimeout(() => {
+    } else if (currentAmbientRef.current) {
+      currentAmbientRef.current.fade(currentAmbientRef.current.volume(), 0, 1000);
+      const stopTimeout = setTimeout(() => {
         currentAmbientRef.current?.stop();
       }, 1000);
+      timeoutsRef.current.push(stopTimeout);
     }
-  }, [currentRoom?.theme, musicVolume]);
+
+    // 클린업 함수에서 현재 effect의 timeout들을 정리
+    return () => {
+      clearAllTimeouts();
+    };
+  }, [currentRoom?.theme, musicVolume, clearAllTimeouts]);
 
   // 사운드 재생 함수들
   const playSound = useCallback(
@@ -212,9 +234,10 @@ export function useGameSound() {
   const stopBackgroundMusic = useCallback(() => {
     if (currentMusicRef.current?.playing()) {
       currentMusicRef.current.fade(currentMusicRef.current.volume(), 0, 1000);
-      setTimeout(() => {
+      const stopTimeout = setTimeout(() => {
         currentMusicRef.current?.stop();
       }, 1000);
+      timeoutsRef.current.push(stopTimeout);
     }
   }, []);
 
@@ -248,9 +271,10 @@ export function useGameSound() {
       }>,
     ) => {
       sounds.forEach(({ key, delay, options }) => {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           playSound(key, options);
         }, delay);
+        timeoutsRef.current.push(timeout);
       });
     },
     [playSound],

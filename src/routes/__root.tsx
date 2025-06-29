@@ -11,8 +11,8 @@ import {
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
-import { getUser } from "~/lib/auth/functions/getUser";
-import appCss from "~/styles.css?url";
+import { getUser } from "@/lib/auth/functions/getUser";
+import appCss from "@/styles.css?url";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
