@@ -2,11 +2,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { gameProgress, NewRoomCompletion, roomCompletion } from "@/lib/db/schema";
 import { json } from "@tanstack/react-start";
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createServerFileRoute } from "@tanstack/react-start/server";
 import { and, eq } from "drizzle-orm";
 
-export const APIRoute = createAPIFileRoute("/api/game/complete")({
-  POST: async ({ request }) => {
+export const ServerRoute = createServerFileRoute("/api/game/complete").methods({
+  POST: async ({ request }: { request: Request }) => {
     try {
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session?.user?.id) {

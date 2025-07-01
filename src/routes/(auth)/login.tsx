@@ -2,22 +2,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import authClient from "@/lib/auth/auth-client";
+import { getFinalRedirectUrl, getRedirectMessage } from "@/lib/auth/redirect-utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { GalleryVerticalEnd, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 
+// 로그인 페이지의 search params 타입 정의
+interface LoginSearchParams {
+  redirectTo?: string;
+}
+
 export const Route = createFileRoute("/(auth)/login")({
   component: LoginForm,
+  validateSearch: (search: Record<string, unknown>): LoginSearchParams => {
+    return {
+      redirectTo: typeof search.redirectTo === "string" ? search.redirectTo : undefined,
+    };
+  },
 });
 
 function LoginForm() {
   const { redirectUrl } = Route.useRouteContext();
+  const search = useSearch({ from: "/(auth)/login" });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // 안전한 리다이렉트 URL 결정
+  const finalRedirectUrl = getFinalRedirectUrl(search.redirectTo, redirectUrl);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +50,7 @@ function LoginForm() {
       {
         email,
         password,
-        callbackURL: redirectUrl,
+        callbackURL: finalRedirectUrl,
       },
       {
         onError: (ctx) => {
@@ -44,7 +59,26 @@ function LoginForm() {
         },
         onSuccess: async () => {
           await queryClient.invalidateQueries({ queryKey: ["user"] });
-          navigate({ to: redirectUrl });
+          navigate({ to: finalRedirectUrl });
+        },
+      },
+    );
+  };
+
+  const handleSocialLogin = (provider: "github" | "google") => {
+    authClient.signIn.social(
+      {
+        provider,
+        callbackURL: finalRedirectUrl,
+      },
+      {
+        onRequest: () => {
+          setIsLoading(true);
+          setErrorMessage("");
+        },
+        onError: (ctx) => {
+          setIsLoading(false);
+          setErrorMessage(ctx.error.message);
         },
       },
     );
@@ -61,11 +95,16 @@ function LoginForm() {
               </div>
               <span className="sr-only">Acme Inc.</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome back to Acme Inc.</h1>
+            <h1 className="text-xl font-bold">EscapeVerse에 로그인하세요</h1>
+            {search.redirectTo && (
+              <p className="text-sm text-gray-600">
+                {getRedirectMessage(search.redirectTo, true)}
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-5">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">이메일</Label>
               <Input
                 id="email"
                 name="email"
@@ -76,19 +115,19 @@ function LoginForm() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">비밀번호</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Enter password here"
+                placeholder="비밀번호를 입력하세요"
                 readOnly={isLoading}
                 required
               />
             </div>
             <Button type="submit" className="mt-2 w-full" size="lg" disabled={isLoading}>
               {isLoading && <LoaderCircle className="animate-spin" />}
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "로그인 중..." : "로그인"}
             </Button>
           </div>
           {errorMessage && (
@@ -96,7 +135,7 @@ function LoginForm() {
           )}
           <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
             <span className="bg-background text-muted-foreground relative z-10 px-2">
-              Or
+              또는
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -105,24 +144,7 @@ function LoginForm() {
               className="w-full"
               type="button"
               disabled={isLoading}
-              onClick={() =>
-                authClient.signIn.social(
-                  {
-                    provider: "github",
-                    callbackURL: redirectUrl,
-                  },
-                  {
-                    onRequest: () => {
-                      setIsLoading(true);
-                      setErrorMessage("");
-                    },
-                    onError: (ctx) => {
-                      setIsLoading(false);
-                      setErrorMessage(ctx.error.message);
-                    },
-                  },
-                )
-              }
+              onClick={() => handleSocialLogin("github")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path
@@ -130,31 +152,14 @@ function LoginForm() {
                   fill="currentColor"
                 />
               </svg>
-              Login with GitHub
+              GitHub로 로그인
             </Button>
             <Button
               variant="outline"
               className="w-full"
               type="button"
               disabled={isLoading}
-              onClick={() =>
-                authClient.signIn.social(
-                  {
-                    provider: "google",
-                    callbackURL: redirectUrl,
-                  },
-                  {
-                    onRequest: () => {
-                      setIsLoading(true);
-                      setErrorMessage("");
-                    },
-                    onError: (ctx) => {
-                      setIsLoading(false);
-                      setErrorMessage(ctx.error.message);
-                    },
-                  },
-                )
-              }
+              onClick={() => handleSocialLogin("google")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path
@@ -162,16 +167,16 @@ function LoginForm() {
                   fill="currentColor"
                 />
               </svg>
-              Login with Google
+              Google로 로그인
             </Button>
           </div>
         </div>
       </form>
 
       <div className="text-center text-sm">
-        Don&apos;t have an account?{" "}
+        계정이 없으신가요?{" "}
         <Link to="/signup" className="underline underline-offset-4">
-          Sign up
+          회원가입
         </Link>
       </div>
     </div>

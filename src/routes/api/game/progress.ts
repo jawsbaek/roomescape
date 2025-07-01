@@ -2,11 +2,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { gameProgress, NewGameProgress } from "@/lib/db/schema";
 import { json } from "@tanstack/react-start";
-import { createAPIFileRoute } from "@tanstack/react-start/api";
+import { createServerFileRoute } from "@tanstack/react-start/server";
 import { and, eq } from "drizzle-orm";
 
-export const APIRoute = createAPIFileRoute("/api/game/progress")({
-  GET: async ({ request }) => {
+export const ServerRoute = createServerFileRoute("/api/game/progress").methods({
+  GET: async ({ request }: { request: Request }) => {
     try {
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session?.user?.id) {
@@ -35,7 +35,7 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
     }
   },
 
-  POST: async ({ request }) => {
+  POST: async ({ request }: { request: Request }) => {
     try {
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session?.user?.id) {
@@ -53,8 +53,8 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
         timeElapsed = 0,
       } = body;
 
-      if (!roomId) {
-        return new Response("Room ID is required", { status: 400 });
+      if (!roomId || typeof currentStep !== "number") {
+        return new Response("Room ID and current step are required", { status: 400 });
       }
 
       // 기존 진행상황 확인
@@ -66,10 +66,11 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
         ),
       });
 
-      let result;
+      let savedProgress;
+
       if (existingProgress) {
-        // 업데이트
-        result = await db
+        // 기존 진행상황 업데이트
+        savedProgress = await db
           .update(gameProgress)
           .set({
             currentStep,
@@ -84,7 +85,7 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
           .where(eq(gameProgress.id, existingProgress.id))
           .returning();
       } else {
-        // 새로 생성
+        // 새 진행상황 생성
         const newProgress: NewGameProgress = {
           userId: session.user.id,
           roomId,
@@ -95,17 +96,17 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
           score,
           timeElapsed,
         };
-        result = await db.insert(gameProgress).values(newProgress).returning();
+        savedProgress = await db.insert(gameProgress).values(newProgress).returning();
       }
 
-      return json({ progress: result[0] });
+      return json({ progress: savedProgress[0] });
     } catch (error) {
       console.error("[POST /api/game/progress] Error:", error);
       return new Response("Internal Server Error", { status: 500 });
     }
   },
 
-  DELETE: async ({ request }) => {
+  DELETE: async ({ request }: { request: Request }) => {
     try {
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session?.user?.id) {
@@ -119,6 +120,7 @@ export const APIRoute = createAPIFileRoute("/api/game/progress")({
         return new Response("Room ID is required", { status: 400 });
       }
 
+      // 미완료 진행상황 삭제
       await db
         .delete(gameProgress)
         .where(

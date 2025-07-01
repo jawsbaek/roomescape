@@ -11,22 +11,17 @@
 import { createServerRootRoute } from "@tanstack/react-start/server";
 
 import { Route as rootRouteImport } from "./routes/__root";
-import { Route as DashboardRouteRouteImport } from "./routes/dashboard/route";
 import { Route as authRouteRouteImport } from "./routes/(auth)/route";
 import { Route as IndexRouteImport } from "./routes/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
 import { Route as GameSamsungSdsRouteImport } from "./routes/game/samsung-sds";
 import { Route as authSignupRouteImport } from "./routes/(auth)/signup";
 import { Route as authLoginRouteImport } from "./routes/(auth)/login";
+import { ServerRoute as ApiGameProgressServerRouteImport } from "./routes/api/game/progress";
+import { ServerRoute as ApiGameCompleteServerRouteImport } from "./routes/api/game/complete";
 import { ServerRoute as ApiAuthSplatServerRouteImport } from "./routes/api/auth/$";
 
 const rootServerRouteImport = createServerRootRoute();
 
-const DashboardRouteRoute = DashboardRouteRouteImport.update({
-  id: "/dashboard",
-  path: "/dashboard",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const authRouteRoute = authRouteRouteImport.update({
   id: "/(auth)",
   getParentRoute: () => rootRouteImport,
@@ -35,11 +30,6 @@ const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
   getParentRoute: () => rootRouteImport,
-} as any);
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: "/",
-  path: "/",
-  getParentRoute: () => DashboardRouteRoute,
 } as any);
 const GameSamsungSdsRoute = GameSamsungSdsRouteImport.update({
   id: "/game/samsung-sds",
@@ -56,6 +46,16 @@ const authLoginRoute = authLoginRouteImport.update({
   path: "/login",
   getParentRoute: () => authRouteRoute,
 } as any);
+const ApiGameProgressServerRoute = ApiGameProgressServerRouteImport.update({
+  id: "/api/game/progress",
+  path: "/api/game/progress",
+  getParentRoute: () => rootServerRouteImport,
+} as any);
+const ApiGameCompleteServerRoute = ApiGameCompleteServerRouteImport.update({
+  id: "/api/game/complete",
+  path: "/api/game/complete",
+  getParentRoute: () => rootServerRouteImport,
+} as any);
 const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
   id: "/api/auth/$",
   path: "/api/auth/$",
@@ -64,88 +64,75 @@ const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof authRouteRouteWithChildren;
-  "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/login": typeof authLoginRoute;
   "/signup": typeof authSignupRoute;
   "/game/samsung-sds": typeof GameSamsungSdsRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof authRouteRouteWithChildren;
   "/login": typeof authLoginRoute;
   "/signup": typeof authSignupRoute;
   "/game/samsung-sds": typeof GameSamsungSdsRoute;
-  "/dashboard": typeof DashboardIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/(auth)": typeof authRouteRouteWithChildren;
-  "/dashboard": typeof DashboardRouteRouteWithChildren;
   "/(auth)/login": typeof authLoginRoute;
   "/(auth)/signup": typeof authSignupRoute;
   "/game/samsung-sds": typeof GameSamsungSdsRoute;
-  "/dashboard/": typeof DashboardIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths:
-    | "/"
-    | "/dashboard"
-    | "/login"
-    | "/signup"
-    | "/game/samsung-sds"
-    | "/dashboard/";
+  fullPaths: "/" | "/login" | "/signup" | "/game/samsung-sds";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/login" | "/signup" | "/game/samsung-sds" | "/dashboard";
+  to: "/" | "/login" | "/signup" | "/game/samsung-sds";
   id:
     | "__root__"
     | "/"
     | "/(auth)"
-    | "/dashboard"
     | "/(auth)/login"
     | "/(auth)/signup"
-    | "/game/samsung-sds"
-    | "/dashboard/";
+    | "/game/samsung-sds";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   authRouteRoute: typeof authRouteRouteWithChildren;
-  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren;
   GameSamsungSdsRoute: typeof GameSamsungSdsRoute;
 }
 export interface FileServerRoutesByFullPath {
   "/api/auth/$": typeof ApiAuthSplatServerRoute;
+  "/api/game/complete": typeof ApiGameCompleteServerRoute;
+  "/api/game/progress": typeof ApiGameProgressServerRoute;
 }
 export interface FileServerRoutesByTo {
   "/api/auth/$": typeof ApiAuthSplatServerRoute;
+  "/api/game/complete": typeof ApiGameCompleteServerRoute;
+  "/api/game/progress": typeof ApiGameProgressServerRoute;
 }
 export interface FileServerRoutesById {
   __root__: typeof rootServerRouteImport;
   "/api/auth/$": typeof ApiAuthSplatServerRoute;
+  "/api/game/complete": typeof ApiGameCompleteServerRoute;
+  "/api/game/progress": typeof ApiGameProgressServerRoute;
 }
 export interface FileServerRouteTypes {
   fileServerRoutesByFullPath: FileServerRoutesByFullPath;
-  fullPaths: "/api/auth/$";
+  fullPaths: "/api/auth/$" | "/api/game/complete" | "/api/game/progress";
   fileServerRoutesByTo: FileServerRoutesByTo;
-  to: "/api/auth/$";
-  id: "__root__" | "/api/auth/$";
+  to: "/api/auth/$" | "/api/game/complete" | "/api/game/progress";
+  id: "__root__" | "/api/auth/$" | "/api/game/complete" | "/api/game/progress";
   fileServerRoutesById: FileServerRoutesById;
 }
 export interface RootServerRouteChildren {
   ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute;
+  ApiGameCompleteServerRoute: typeof ApiGameCompleteServerRoute;
+  ApiGameProgressServerRoute: typeof ApiGameProgressServerRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/dashboard": {
-      id: "/dashboard";
-      path: "/dashboard";
-      fullPath: "/dashboard";
-      preLoaderRoute: typeof DashboardRouteRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/(auth)": {
       id: "/(auth)";
       path: "/";
@@ -159,13 +146,6 @@ declare module "@tanstack/react-router" {
       fullPath: "/";
       preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard/": {
-      id: "/dashboard/";
-      path: "/";
-      fullPath: "/dashboard/";
-      preLoaderRoute: typeof DashboardIndexRouteImport;
-      parentRoute: typeof DashboardRouteRoute;
     };
     "/game/samsung-sds": {
       id: "/game/samsung-sds";
@@ -192,6 +172,20 @@ declare module "@tanstack/react-router" {
 }
 declare module "@tanstack/react-start/server" {
   interface ServerFileRoutesByPath {
+    "/api/game/progress": {
+      id: "/api/game/progress";
+      path: "/api/game/progress";
+      fullPath: "/api/game/progress";
+      preLoaderRoute: typeof ApiGameProgressServerRouteImport;
+      parentRoute: typeof rootServerRouteImport;
+    };
+    "/api/game/complete": {
+      id: "/api/game/complete";
+      path: "/api/game/complete";
+      fullPath: "/api/game/complete";
+      preLoaderRoute: typeof ApiGameCompleteServerRouteImport;
+      parentRoute: typeof rootServerRouteImport;
+    };
     "/api/auth/$": {
       id: "/api/auth/$";
       path: "/api/auth/$";
@@ -216,22 +210,9 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
   authRouteRouteChildren,
 );
 
-interface DashboardRouteRouteChildren {
-  DashboardIndexRoute: typeof DashboardIndexRoute;
-}
-
-const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
-  DashboardIndexRoute: DashboardIndexRoute,
-};
-
-const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
-  DashboardRouteRouteChildren,
-);
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   authRouteRoute: authRouteRouteWithChildren,
-  DashboardRouteRoute: DashboardRouteRouteWithChildren,
   GameSamsungSdsRoute: GameSamsungSdsRoute,
 };
 export const routeTree = rootRouteImport
@@ -239,6 +220,8 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>();
 const rootServerRouteChildren: RootServerRouteChildren = {
   ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
+  ApiGameCompleteServerRoute: ApiGameCompleteServerRoute,
+  ApiGameProgressServerRoute: ApiGameProgressServerRoute,
 };
 export const serverRouteTree = rootServerRouteImport
   ._addFileChildren(rootServerRouteChildren)

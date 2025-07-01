@@ -8,10 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useGameSound } from "@/hooks/useGameSound";
+import authClient from "@/lib/auth/auth-client";
 import { useGameStore } from "@/stores/gameStore";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Brain, Clock, Eye, Lock, Skull, Star, User, Zap } from "lucide-react";
+import { Brain, Clock, Eye, Lock, LogOut, Skull, Star, User, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -79,8 +81,19 @@ const MovingDot = ({ delay = 0 }: { delay?: number }) => (
 
 function RouteComponent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { availableRooms, totalScore, totalPlayTime, startGame } = useGameStore();
   const { playBackgroundMusic, playClickSound } = useGameSound();
+
+  // 현재 로그인된 사용자 정보 가져오기
+  const { data: session } = authClient.useSession();
+  const user = session?.user || null;
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    await queryClient.invalidateQueries({ queryKey: ["user"] });
+    // 게임 상태도 초기화할 수 있습니다
+  };
 
   const handleRoomSelect = (roomId: string) => {
     const room = availableRooms.find((r) => r.id === roomId);
@@ -145,16 +158,58 @@ function RouteComponent() {
             </div>
             <h1 className="text-2xl font-bold text-white">EscapeVerse</h1>
           </motion.div>
-          <Link to="/login">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="outline"
-                className="border-purple-500 bg-transparent text-purple-300 hover:bg-purple-500 hover:text-white"
+
+          {/* 사용자 프로필 영역 */}
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <motion.div
+                className="flex items-center space-x-3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                로그인
-              </Button>
-            </motion.div>
-          </Link>
+                <div className="flex items-center space-x-2 rounded-lg bg-white/10 px-3 py-2 backdrop-blur-sm">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-purple-400 to-pink-400">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="font-medium text-white">
+                    {user.name || user.email}
+                  </span>
+                </div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/50 bg-transparent text-red-300 hover:bg-red-500 hover:text-white"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    로그아웃
+                  </Button>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link to="/login">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      variant="outline"
+                      className="border-purple-500 bg-transparent text-purple-300 hover:bg-purple-500 hover:text-white"
+                    >
+                      로그인
+                    </Button>
+                  </motion.div>
+                </Link>
+                <Link to="/signup">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                      회원가입
+                    </Button>
+                  </motion.div>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </motion.header>
 
@@ -176,34 +231,38 @@ function RouteComponent() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="mx-auto mb-8 max-w-2xl text-xl text-gray-300"
             >
-              혼자서도 충분히 스릴 넘치는 개인 방탈출 게임으로 당신의 한계에 도전하세요
+              {user
+                ? `안녕하세요, ${user.name || user.email}님! 스릴 넘치는 개인 방탈출 게임으로 당신의 한계에 도전하세요`
+                : "혼자서도 충분히 스릴 넘치는 개인 방탈출 게임으로 당신의 한계에 도전하세요"}
             </motion.p>
 
-            {/* 통계 */}
-            <motion.div
-              className="mb-8 flex justify-center space-x-8"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">{totalScore}</div>
-                <div className="text-sm text-gray-400">총 점수</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">
-                  {formatPlayTime(totalPlayTime)}
+            {/* 사용자별 통계 */}
+            {user && (
+              <motion.div
+                className="mb-8 flex justify-center space-x-8"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{totalScore}</div>
+                  <div className="text-sm text-gray-400">총 점수</div>
                 </div>
-                <div className="text-sm text-gray-400">플레이 시간</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">
-                  {availableRooms.filter((room) => room.completedAt).length}/
-                  {availableRooms.length}
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {formatPlayTime(totalPlayTime)}
+                  </div>
+                  <div className="text-sm text-gray-400">플레이 시간</div>
                 </div>
-                <div className="text-sm text-gray-400">완료한 방</div>
-              </div>
-            </motion.div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">
+                    {availableRooms.filter((room) => room.completedAt).length}/
+                    {availableRooms.length}
+                  </div>
+                  <div className="text-sm text-gray-400">완료한 방</div>
+                </div>
+              </motion.div>
+            )}
 
             <motion.div
               initial={{ y: 50, opacity: 0 }}
@@ -218,10 +277,14 @@ function RouteComponent() {
                   onClick={() => {
                     playClickSound();
                     playBackgroundMusic();
-                    navigate({ to: "/game/samsung-sds" });
+                    if (user) {
+                      navigate({ to: "/game/samsung-sds" });
+                    } else {
+                      navigate({ to: "/login" });
+                    }
                   }}
                 >
-                  삼성 SDS 방탈출 시작
+                  {user ? "삼성 SDS 방탈출 시작" : "로그인하고 게임 시작"}
                 </Button>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
