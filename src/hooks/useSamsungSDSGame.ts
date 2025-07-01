@@ -34,6 +34,16 @@ export function useSamsungSDSGame(): GameState &
   const [currentFloor, setCurrentFloor] = useState(1);
   const [isGameInitialized, setIsGameInitialized] = useState(false);
 
+  // 우산 선택 관련 상태
+  const [selectedUmbrella, setSelectedUmbrella] = useState<string | null>(null);
+  const [showUmbrellaSelection, setShowUmbrellaSelection] = useState(false);
+  const [isUmbrellaSelecting, setIsUmbrellaSelecting] = useState(false);
+
+  // 소주 선택 관련 상태
+  const [selectedSoju, setSelectedSoju] = useState<string | null>(null);
+  const [showSojuSelection, setShowSojuSelection] = useState(false);
+  const [isSojuSelecting, setIsSojuSelecting] = useState(false);
+
   // 훅들
   const { playClickSound, playSuccessSound, playErrorSound } = useGameSound();
   const { timeElapsed, formattedTime, startTimer } = useGameTimer();
@@ -142,7 +152,24 @@ export function useSamsungSDSGame(): GameState &
       setShowInput(true);
     } else if (currentStep.type === "elevator") {
       setShowElevatorButtons(true);
+    } else if (currentStep.type === "umbrella") {
+      setShowUmbrellaSelection(true);
+    } else if (currentStep.type === "soju") {
+      setShowSojuSelection(true);
     } else if (currentStep.type === "story") {
+      // 우산 몬스터 만남 후 자동으로 실패로 이동
+      if (currentStep.id === "umbrella-monster-encounter") {
+        const failureStepIndex = samsungSdsStorySteps.findIndex(
+          (step) => step.id === "umbrella-failure",
+        );
+        if (failureStepIndex !== -1) {
+          const failureTimeout = setTimeout(() => {
+            setCurrentStepIndex(failureStepIndex);
+          }, 3000); // 3초 후 실패 화면으로
+          return () => clearTimeout(failureTimeout);
+        }
+      }
+
       const nextStepTimeout = setTimeout(() => {
         if (currentStepIndex < samsungSdsStorySteps.length - 1) {
           setCurrentStepIndex((prev) => prev + 1);
@@ -151,7 +178,105 @@ export function useSamsungSDSGame(): GameState &
 
       return () => clearTimeout(nextStepTimeout);
     }
-  }, [currentStep.type, currentStepIndex]);
+  }, [currentStep.type, currentStep.id, currentStepIndex]);
+
+  // 우산 선택 핸들러
+  const handleUmbrellaSelection = useCallback(
+    (color: string) => {
+      if (isUmbrellaSelecting) return;
+
+      setIsUmbrellaSelecting(true);
+      setSelectedUmbrella(color);
+      setShowUmbrellaSelection(false);
+      playClickSound();
+
+      const selectionTimeout = setTimeout(() => {
+        if (color === currentStep.correctAnswer) {
+          // 정답 - 핑크색 우산
+          playSuccessSound();
+          setScore((prev) => prev + 15);
+
+          const successStepIndex = samsungSdsStorySteps.findIndex(
+            (step) => step.id === "umbrella-success",
+          );
+          if (successStepIndex !== -1) {
+            setCurrentStepIndex(successStepIndex);
+          }
+        } else {
+          // 오답 - 파란색/검은색 우산
+          playErrorSound();
+
+          const monsterStepIndex = samsungSdsStorySteps.findIndex(
+            (step) => step.id === "umbrella-monster-encounter",
+          );
+          if (monsterStepIndex !== -1) {
+            setCurrentStepIndex(monsterStepIndex);
+          }
+        }
+
+        setIsUmbrellaSelecting(false);
+        setSelectedUmbrella(null);
+      }, 2000);
+
+      return () => clearTimeout(selectionTimeout);
+    },
+    [
+      isUmbrellaSelecting,
+      currentStep.correctAnswer,
+      playClickSound,
+      playSuccessSound,
+      playErrorSound,
+    ],
+  );
+
+  // 소주 선택 핸들러
+  const handleSojuSelection = useCallback(
+    (type: string) => {
+      if (isSojuSelecting) return;
+
+      setIsSojuSelecting(true);
+      setSelectedSoju(type);
+      setShowSojuSelection(false);
+      playClickSound();
+
+      const selectionTimeout = setTimeout(() => {
+        if (type === currentStep.correctAnswer) {
+          // 정답 - 오리지널
+          playSuccessSound();
+          setScore((prev) => prev + 15);
+
+          const successStepIndex = samsungSdsStorySteps.findIndex(
+            (step) => step.id === "soju-success",
+          );
+          if (successStepIndex !== -1) {
+            setCurrentStepIndex(successStepIndex);
+          }
+        } else {
+          // 오답 - 후레쉬
+          playErrorSound();
+
+          const failureStepIndex = samsungSdsStorySteps.findIndex(
+            (step) => step.id === "soju-failure",
+          );
+          if (failureStepIndex !== -1) {
+            setCurrentStepIndex(failureStepIndex);
+          }
+        }
+
+        setIsSojuSelecting(false);
+        setSelectedSoju(null);
+      }, 2000);
+
+      return () => clearTimeout(selectionTimeout);
+    },
+    [
+      isSojuSelecting,
+      currentStep.correctAnswer,
+      playClickSound,
+      playSuccessSound,
+      playErrorSound,
+    ],
+  );
 
   // 층 선택 핸들러
   const handleFloorSelection = useCallback(
@@ -218,18 +343,47 @@ export function useSamsungSDSGame(): GameState &
 
   // 실패 후 재시도 핸들러
   const handleRetryFromFailure = useCallback(() => {
-    const elevatorStepIndex = samsungSdsStorySteps.findIndex(
-      (step) => step.id === "elevator-selection",
-    );
-    if (elevatorStepIndex !== -1) {
-      setCurrentStepIndex(elevatorStepIndex);
+    // 엘리베이터 실패인 경우
+    if (currentStep.id === "elevator-failure") {
+      const elevatorStepIndex = samsungSdsStorySteps.findIndex(
+        (step) => step.id === "elevator-selection",
+      );
+      if (elevatorStepIndex !== -1) {
+        setCurrentStepIndex(elevatorStepIndex);
+      }
+      setShowElevatorButtons(false);
+      setSelectedFloor(null);
+      setIsFloorSelecting(false);
+      setShowElevatorAnimation(false);
+      setCurrentFloor(1);
     }
-    setShowElevatorButtons(false);
-    setSelectedFloor(null);
-    setIsFloorSelecting(false);
-    setShowElevatorAnimation(false);
-    setCurrentFloor(1);
-  }, []);
+
+    // 우산 실패인 경우
+    if (currentStep.id === "umbrella-failure") {
+      const umbrellaStepIndex = samsungSdsStorySteps.findIndex(
+        (step) => step.id === "umbrella-problem",
+      );
+      if (umbrellaStepIndex !== -1) {
+        setCurrentStepIndex(umbrellaStepIndex);
+      }
+      setShowUmbrellaSelection(false);
+      setSelectedUmbrella(null);
+      setIsUmbrellaSelecting(false);
+    }
+
+    // 소주 실패인 경우
+    if (currentStep.id === "soju-failure") {
+      const sojuStepIndex = samsungSdsStorySteps.findIndex(
+        (step) => step.id === "soju-selection",
+      );
+      if (sojuStepIndex !== -1) {
+        setCurrentStepIndex(sojuStepIndex);
+      }
+      setShowSojuSelection(false);
+      setSelectedSoju(null);
+      setIsSojuSelecting(false);
+    }
+  }, [currentStep.id]);
 
   // 답변 제출 핸들러
   const handleAnswerSubmit = useCallback(() => {
@@ -323,6 +477,12 @@ export function useSamsungSDSGame(): GameState &
     isFloorSelecting,
     showElevatorAnimation,
     currentFloor,
+    selectedUmbrella,
+    showUmbrellaSelection,
+    isUmbrellaSelecting,
+    selectedSoju,
+    showSojuSelection,
+    isSojuSelecting,
 
     // 계산된 값들
     currentStep,
@@ -340,5 +500,7 @@ export function useSamsungSDSGame(): GameState &
     handleGoBack,
     handleGameComplete,
     setUserAnswer,
+    handleUmbrellaSelection,
+    handleSojuSelection,
   };
 }

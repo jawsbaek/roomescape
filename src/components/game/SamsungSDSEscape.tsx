@@ -8,7 +8,9 @@ import {
   GameHeader,
   GameSuccess,
   QuestionInput,
+  SojuSelector,
   StoryDisplay,
+  UmbrellaSelector,
 } from "./ui";
 
 export function SamsungSDSEscape() {
@@ -50,6 +52,22 @@ export function SamsungSDSEscape() {
               selectedFloor={gameState.selectedFloor}
               isFloorSelecting={gameState.isFloorSelecting}
               onFloorSelection={gameState.handleFloorSelection}
+            />
+
+            <UmbrellaSelector
+              currentStep={gameState.currentStep}
+              showUmbrellaSelection={gameState.showUmbrellaSelection}
+              selectedUmbrella={gameState.selectedUmbrella}
+              isUmbrellaSelecting={gameState.isUmbrellaSelecting}
+              onUmbrellaSelection={gameState.handleUmbrellaSelection}
+            />
+
+            <SojuSelector
+              currentStep={gameState.currentStep}
+              showSojuSelection={gameState.showSojuSelection}
+              selectedSoju={gameState.selectedSoju}
+              isSojuSelecting={gameState.isSojuSelecting}
+              onSojuSelection={gameState.handleSojuSelection}
             />
 
             <ElevatorAnimation
