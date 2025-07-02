@@ -331,7 +331,7 @@ function RouteComponent() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {availableRooms.map((room, index) => (
               <motion.div
-                key={room.id}
+                key={`room-${room.id}`}
                 initial={{ y: 100, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -474,7 +474,7 @@ function RouteComponent() {
               { value: "24/7", label: "운영시간" },
             ].map((stat, index) => (
               <motion.div
-                key={index}
+                key={`stat-${stat.label}-${stat.value}`}
                 initial={{ scale: 0 }}
                 whileInView={{ scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}

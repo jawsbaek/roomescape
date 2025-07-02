@@ -34,9 +34,9 @@ export function MazeBackground() {
         </defs>
 
         {/* 수직 라인들 */}
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: 10 }, (_, i) => (
           <motion.line
-            key={`v-${i}`}
+            key={`vertical-line-${i * 10}`}
             x1={i * 10}
             y1="0"
             x2={i * 10}
@@ -55,9 +55,9 @@ export function MazeBackground() {
         ))}
 
         {/* 수평 라인들 */}
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: 10 }, (_, i) => (
           <motion.line
-            key={`h-${i}`}
+            key={`horizontal-line-${i * 10}`}
             x1="0"
             y1={i * 10}
             x2="100"
