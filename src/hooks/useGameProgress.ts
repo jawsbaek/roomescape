@@ -117,23 +117,23 @@ export function useGameProgress(roomId: string) {
   });
 
   // 편의 함수들
-  const saveProgress = useCallback(
+  const handleSaveProgress = useCallback(
     (progressData: Omit<GameProgressData, "roomId">) => {
       return saveProgressMutation.mutate({ ...progressData, roomId });
     },
-    [saveProgressMutation, roomId],
+    [saveProgressMutation.mutate, roomId],
   );
 
-  const completeGame = useCallback(
+  const handleCompleteGame = useCallback(
     (completeData: Omit<CompleteGameData, "roomId">) => {
       return completeGameMutation.mutate({ ...completeData, roomId });
     },
-    [completeGameMutation, roomId],
+    [completeGameMutation.mutate, roomId],
   );
 
   const resetProgress = useCallback(() => {
     return resetProgressMutation.mutate();
-  }, [resetProgressMutation]);
+  }, [resetProgressMutation.mutate]);
 
   return {
     // 데이터
@@ -147,8 +147,8 @@ export function useGameProgress(roomId: string) {
     isResetting: resetProgressMutation.isPending,
 
     // 함수들
-    saveProgress,
-    completeGame,
+    saveProgress: handleSaveProgress,
+    completeGame: handleCompleteGame,
     resetProgress,
 
     // 에러

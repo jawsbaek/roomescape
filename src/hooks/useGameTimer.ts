@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useGameTimer() {
   const { isGameActive, isPaused } = useGameStore();
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const pausedTimeRef = useRef<number>(0);
@@ -12,13 +13,14 @@ export function useGameTimer() {
   const startTimer = useCallback(() => {
     startTimeRef.current = Date.now();
     pausedTimeRef.current = 0;
-    setTimeElapsed(0);
+    setTimeElapsed((prev) => (prev === 0 ? 0 : 0));
+    setIsRunning((prev) => (!prev ? true : true));
   }, []);
 
   // 타이머 업데이트 함수
   const updateTimer = useCallback(() => {
     const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-    setTimeElapsed(elapsed);
+    setTimeElapsed(() => elapsed);
   }, []);
 
   // 타이머 정지
@@ -27,7 +29,8 @@ export function useGameTimer() {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    setTimeElapsed(0);
+    setTimeElapsed(() => 0);
+    setIsRunning(() => false);
   }, []);
 
   // 타이머 일시정지
@@ -126,7 +129,7 @@ export function useGameTimer() {
     timeElapsed,
     formattedTime: formatTime(timeElapsed),
     detailedTime: formatDetailedTime(timeElapsed),
-    isRunning: isGameActive && !isPaused,
+    isRunning,
     startTimer,
     stopTimer,
     pauseTimer,

@@ -59,12 +59,12 @@ export function useSamsungSDSGame(): GameState &
     if (!isLoading && !isGameInitialized) {
       if (progress) {
         console.log("기존 진행상황 불러오기:", progress);
-        setCurrentStepIndex(progress.currentStep || 0);
-        setScore(progress.score || 0);
-        setHintsUsed(progress.hintsUsed || 0);
+        setCurrentStepIndex(() => progress.currentStep || 0);
+        setScore(() => progress.score || 0);
+        setHintsUsed(() => progress.hintsUsed || 0);
       }
       startTimer();
-      setIsGameInitialized(true);
+      setIsGameInitialized(() => true);
     }
   }, [progress, isLoading, startTimer, isGameInitialized]);
 

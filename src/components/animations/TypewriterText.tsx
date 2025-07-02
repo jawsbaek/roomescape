@@ -31,7 +31,7 @@ export function TypewriterText({
 
       return () => clearTimeout(timeout);
     } else if (!isComplete) {
-      setIsComplete(true);
+      setIsComplete(() => true);
       onComplete?.();
     }
   }, [currentIndex, text, speed, isComplete, onComplete]);

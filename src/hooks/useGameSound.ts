@@ -146,10 +146,12 @@ export function useGameSound() {
       // 컴포넌트 언마운트 시 모든 사운드 정지
       clearAllTimeouts();
       const sounds = soundsRef.current;
-      Object.values(sounds).forEach((sound) => {
-        sound.stop();
-        sound.unload();
-      });
+      if (sounds) {
+        Object.values(sounds).forEach((sound) => {
+          sound.stop();
+          sound.unload();
+        });
+      }
       currentMusicRef.current?.stop();
       currentMusicRef.current?.unload();
       currentAmbientRef.current?.stop();
@@ -198,11 +200,14 @@ export function useGameSound() {
         });
 
         currentAmbientRef.current.play();
-        currentAmbientRef.current.fade(
-          0,
-          (ambientConfig.volume || 1) * musicVolume,
-          2000,
-        );
+        const fadeTimeout = setTimeout(() => {
+          currentAmbientRef.current?.fade(
+            0,
+            (ambientConfig.volume || 1) * musicVolume,
+            2000,
+          );
+        }, 100);
+        timeoutsRef.current.push(fadeTimeout);
       }
     } else if (currentAmbientRef.current) {
       currentAmbientRef.current.fade(currentAmbientRef.current.volume(), 0, 1000);
